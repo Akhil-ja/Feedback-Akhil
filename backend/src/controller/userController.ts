@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import HTTP_statusCode from '../enums/httpStatusCode';
 import { IUserService } from '../interface/IServiceInterface/IUserServices';
 import { AppError } from '../utils/appError';
 import { NextFunction, Request, Response } from 'express';
@@ -15,7 +16,10 @@ export class UserController {
       const userId = req.user?.id;
 
       if (!userId) {
-        throw new AppError('Authentication required', 401);
+        throw new AppError(
+          'Authentication required',
+          HTTP_statusCode.Unauthorized
+        );
       }
 
       const userProfile = await this.UserService.getProfile(userId);
@@ -29,7 +33,10 @@ export class UserController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Profile fetch failed', 500)
+          : new AppError(
+              'Profile fetch failed',
+              HTTP_statusCode.InternalServerError
+            )
       );
     }
   };

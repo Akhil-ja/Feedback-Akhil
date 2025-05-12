@@ -7,6 +7,7 @@ import { AppError } from '../utils/appError';
 import { verifyPassword, hashPassword } from '../utils/passwordUtils';
 import { IUser } from '../interface/common.interface';
 import { generateOTP, sendOTP } from '../utils/otpUtils';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 export class SharedService implements ISharedService {
   constructor(private readonly userRepository: IUserRepository) {}
@@ -21,21 +22,21 @@ export class SharedService implements ISharedService {
     const role = user?.role;
 
     if (!user) {
-      throw new AppError('Email not registered', 404);
+      throw new AppError('Email not registered', HTTP_statusCode.NotFound);
     }
 
     if (role == 'admin') {
-      throw new AppError('User is not authorized', 403);
+      throw new AppError('User is not authorized', HTTP_statusCode.NoAccess);
     }
 
     if (user.status === 'blocked') {
-      throw new AppError('User is blocked', 403);
+      throw new AppError('User is blocked', HTTP_statusCode.NoAccess);
     }
 
     const isPasswordValid = verifyPassword(password, user.password);
 
     if (!isPasswordValid) {
-      throw new AppError('Incorrect password', 401);
+      throw new AppError('Incorrect password', HTTP_statusCode.Unauthorized);
     }
 
     const tokens = generateTokens(user.id, user.role);
@@ -61,7 +62,7 @@ export class SharedService implements ISharedService {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
-      throw new AppError('Email not registered', 404);
+      throw new AppError('Email not registered', HTTP_statusCode.NotFound);
     }
 
     const otp = generateOTP();
@@ -84,30 +85,30 @@ export class SharedService implements ISharedService {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
-      throw new AppError('Email not registered', 404);
+      throw new AppError('Email not registered', HTTP_statusCode.NotFound);
     }
 
     if (user.role == 'admin') {
-      throw new AppError('User is not authorized', 403);
+      throw new AppError('User is not authorized', HTTP_statusCode.NoAccess);
     }
 
     if (user.status === 'blocked') {
-      throw new AppError('User is blocked', 403);
+      throw new AppError('User is blocked', HTTP_statusCode.NoAccess);
     }
 
     const storedOTP = user?.resetPasswordOTP;
 
     if (!storedOTP) {
-      throw new AppError('No OTP found', 400);
+      throw new AppError('No OTP found', HTTP_statusCode.BadRequest);
     }
 
     if (Date.now() > user.resetPasswordOTPExpires.getTime()) {
-      throw new AppError('OTP expired', 400);
+      throw new AppError('OTP expired', HTTP_statusCode.BadRequest);
     }
 
     if (otp !== storedOTP) {
       console.log('OTP mismatch. Provided:', otp, 'Stored:', storedOTP);
-      throw new AppError('Invalid OTP', 400);
+      throw new AppError('Invalid OTP', HTTP_statusCode.BadRequest);
     }
 
     user.resetPasswordOTP = undefined;
@@ -146,29 +147,34 @@ export class SharedService implements ISharedService {
     const user = await this.userRepository.findById(userId);
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('User not found', HTTP_statusCode.NotFound);
     }
 
     const { oldPassword, newPassword } = updates;
 
     if (!oldPassword || !newPassword) {
-      throw new AppError('Both old and new passwords are required', 400);
+      throw new AppError(
+        'Both old and new passwords are required',
+        HTTP_statusCode.BadRequest
+      );
     }
 
     if (oldPassword === newPassword) {
       throw new AppError(
         'New password must be different from the old password',
-        400
+        HTTP_statusCode.BadRequest
       );
     }
 
-    const isPasswordValid = await verifyPassword(oldPassword, user.password); // make sure this is `await` if `verifyPassword` is async
-
+    const isPasswordValid = verifyPassword(oldPassword, user.password);
     if (!isPasswordValid) {
-      throw new AppError('Current password is incorrect', 401);
+      throw new AppError(
+        'Current password is incorrect',
+        HTTP_statusCode.Unauthorized
+      );
     }
 
-    const hashedPassword = await hashPassword(newPassword); // make sure this is `await` if `hashPassword` is async
+    const hashedPassword = hashPassword(newPassword);
 
     user.password = hashedPassword;
     user.edited_at = new Date();

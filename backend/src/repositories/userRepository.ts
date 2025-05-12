@@ -3,12 +3,13 @@ import { IUserRepository } from '../interface/IRepositoryInterface/IUserReposito
 import { AppError } from '../utils/appError';
 import User from '../models/userModel';
 import { IUser } from '../interface/common.interface';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 export class UserRepository implements IUserRepository {
   async getAllUsers(): Promise<IUser[]> {
     const users = await User.find();
     if (!users || users.length === 0) {
-      throw new AppError('No users found', 404);
+      throw new AppError('No users found', HTTP_statusCode.NotFound);
     }
     return users;
   }
@@ -33,7 +34,7 @@ export class UserRepository implements IUserRepository {
     });
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('User not found', HTTP_statusCode.NotFound);
     }
 
     return user;
@@ -46,7 +47,7 @@ export class UserRepository implements IUserRepository {
     });
 
     if (!user) {
-      throw new AppError('User not found', 404);
+      throw new AppError('User not found', HTTP_statusCode.NotFound);
     }
 
     return user;

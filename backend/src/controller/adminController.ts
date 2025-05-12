@@ -1,6 +1,7 @@
 import { IAdminService } from '../interface/IServiceInterface/IAdminServices';
 import { AppError } from '../utils/appError';
 import { Request, Response, NextFunction } from 'express';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 export class AdminController {
   constructor(private readonly AdminService: IAdminService) {}
@@ -35,7 +36,7 @@ export class AdminController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Failed to signin', 400)
+          : new AppError('Failed to signin', HTTP_statusCode.BadRequest)
       );
     }
   };
@@ -65,7 +66,7 @@ export class AdminController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Failed to create user', 400)
+          : new AppError('Failed to create user', HTTP_statusCode.BadRequest)
       );
     }
   };
@@ -81,7 +82,9 @@ export class AdminController {
     } catch (error) {
       console.error('Error during logout:', error);
       next(
-        error instanceof AppError ? error : new AppError('Logout failed', 500)
+        error instanceof AppError
+          ? error
+          : new AppError('Logout failed', HTTP_statusCode.InternalServerError)
       );
     }
   };

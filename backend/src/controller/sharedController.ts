@@ -2,6 +2,7 @@
 import { NextFunction, Response, Request } from 'express';
 import { AppError } from '../utils/appError';
 import { ISharedService } from '../interface/IServiceInterface/ISharedServices';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 export class SharedController {
   constructor(private readonly sharedService: ISharedService) {}
@@ -36,7 +37,7 @@ export class SharedController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Failed to signin', 400)
+          : new AppError('Failed to signin', HTTP_statusCode.BadRequest)
       );
     }
   };
@@ -58,7 +59,7 @@ export class SharedController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Failed to resend OTP', 400)
+          : new AppError('Failed to resend OTP', HTTP_statusCode.BadRequest)
       );
     }
   };
@@ -93,7 +94,7 @@ export class SharedController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Failed to verify OTP', 400)
+          : new AppError('Failed to verify OTP', HTTP_statusCode.BadRequest)
       );
     }
   };
@@ -107,13 +108,19 @@ export class SharedController {
       const userId = req.user?.id;
 
       if (!userId) {
-        throw new AppError('Authentication required', 401);
+        throw new AppError(
+          'Authentication required',
+          HTTP_statusCode.Unauthorized
+        );
       }
 
       const { oldPassword, newPassword } = req.body;
 
       if (!oldPassword || !newPassword) {
-        throw new AppError('Both old and new passwords are required', 400);
+        throw new AppError(
+          'Both old and new passwords are required',
+          HTTP_statusCode.BadRequest
+        );
       }
 
       const updatedUser = await this.sharedService.changePassword(userId, {
@@ -136,7 +143,10 @@ export class SharedController {
       next(
         error instanceof AppError
           ? error
-          : new AppError('Password update failed', 500)
+          : new AppError(
+              'Password update failed',
+              HTTP_statusCode.InternalServerError
+            )
       );
     }
   };
@@ -152,7 +162,9 @@ export class SharedController {
     } catch (error) {
       console.error('Error during logout:', error);
       next(
-        error instanceof AppError ? error : new AppError('Logout failed', 500)
+        error instanceof AppError
+          ? error
+          : new AppError('Logout failed', HTTP_statusCode.InternalServerError)
       );
     }
   };

@@ -6,6 +6,7 @@ import bcrypt from 'bcrypt';
 import { AuthResponse } from '../interface/common.interface';
 import generateTokens from '../utils/jwtUtils';
 import { Request, Response } from 'express';
+import HTTP_statusCode from '../enums/httpStatusCode';
 
 export class AdminService implements IAdminService {
   constructor(private readonly userRepository: IUserRepository) {}
@@ -19,21 +20,21 @@ export class AdminService implements IAdminService {
     const user = await this.userRepository.findByEmail(email);
 
     if (!user) {
-      throw new AppError('Email not registered', 404);
+      throw new AppError('Email not registered', HTTP_statusCode.NotFound);
     }
 
     if (user.role !== 'admin') {
-      throw new AppError('Admin is not authorized', 403);
+      throw new AppError('Admin is not authorized', HTTP_statusCode.NoAccess);
     }
 
     if (user.status === 'blocked') {
-      throw new AppError('User is blocked', 403);
+      throw new AppError('User is blocked', HTTP_statusCode.NoAccess);
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new AppError('Incorrect password', 401);
+      throw new AppError('Incorrect password', HTTP_statusCode.Unauthorized);
     }
 
     const tokens = generateTokens(user.id, user.role);
@@ -65,12 +66,12 @@ export class AdminService implements IAdminService {
     const existingUser = await this.userRepository.findByEmail(userData.email);
 
     if (existingUser) {
-      throw new AppError('Email already registered', 409);
+      throw new AppError('Email already registered', HTTP_statusCode.Conflict);
     }
 
     const validRoles = ['employee', 'manager'];
     if (!validRoles.includes(userData.role)) {
-      throw new AppError('Invalid role specified', 400);
+      throw new AppError('Invalid role specified', HTTP_statusCode.BadRequest);
     }
 
     const saltRounds = 10;
