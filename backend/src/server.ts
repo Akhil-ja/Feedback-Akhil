@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 
 import globalErrorHandler from './middleware/globalErrorHandler';
 import connectDB from './config/db';
+import routes from './routes';
 
 dotenv.config();
 
@@ -18,14 +19,10 @@ app.use(cors());
 app.use(morgan('dev'));
 app.use(express.json());
 
-app.get('/test', (_req, res) => {
-  res.send('Server with Morgan and CORS is running 🚀');
-});
-
 app.use(express.json());
 app.use(cookieParser());
 
-// app.use('/', routes);
+app.use('/api', routes);
 
 app.use(globalErrorHandler);
 
